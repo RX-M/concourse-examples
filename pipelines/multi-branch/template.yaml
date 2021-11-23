@@ -1,8 +1,4 @@
-resource_types:
-- name: k8s
-  type: registry-image
-  source:
-    repository: srinivasavasu/concourse-k8s
+
 
 resources:
 - name: branch
@@ -14,6 +10,10 @@ resources:
   type: git
   source:
     uri: https://github.com/RX-M/examples
+- name: oci-builder
+  type: registry-image
+  source:
+    repository: concourse/oci-build-task
 - name: goapp-image
   type: registry-image
   icon: docker
@@ -28,10 +28,12 @@ resources:
     admin_key: ((admin-key))
     admin_cert: ((admin-cert))
     namespace: ((branch))
-- name: oci-builder
+
+resource_types:
+- name: k8s
   type: registry-image
   source:
-    repository: concourse/oci-build-task
+    repository: srinivasavasu/concourse-k8s
 
 jobs:
 - name: test
