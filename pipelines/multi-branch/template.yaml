@@ -43,7 +43,7 @@ jobs:
       trigger: true
     - get: examples
   - task: unit
-    file: examples/tasks/go-test.yml
+    file: examples/tasks/go-test.yaml
     input_mapping:
       repo: branch
     params:
@@ -58,7 +58,7 @@ jobs:
     - get: examples
     - get: oci-builder
   - task: build-image
-    file: examples/tasks/build-image.yml
+    file: examples/tasks/build-image.yaml
     image: oci-builder
     input_mapping:
       repo: branch
