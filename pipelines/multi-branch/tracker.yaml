@@ -30,6 +30,6 @@ jobs:
     - var: branch
       values: ((.:branches))
     set_pipeline: dev
-    file: examples/pipelines/multi-branch/template.yml
+    file: examples/pipelines/multi-branch/template.yaml
     instance_vars:
       branch: ((.:branch.name))     
