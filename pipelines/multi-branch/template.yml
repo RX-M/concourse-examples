@@ -1,0 +1,92 @@
+resource_types:
+- name: k8s
+  type: registry-image
+  source:
+    repository: srinivasavasu/concourse-k8s
+
+resources:
+- name: branch
+  type: git
+  source:
+    uri: https://github.com/RX-M/examples
+    branch: ((branch))
+- name: examples
+  type: git
+  source:
+    uri: https://github.com/RX-M/examples
+- name: goapp-image
+  type: registry-image
+  icon: docker
+  source:
+    repository: "10.96.0.100:5000/goapp"
+    tag: ((branch))
+- name: k8s-deployment
+  type: k8s
+  source:
+    cluster_url: ((cluster-url))
+    cluster_ca: ((cluster-ca))
+    admin_key: ((admin-key))
+    admin_cert: ((admin-cert))
+    namespace: ((branch))
+- name: oci-builder
+  type: registry-image
+  source:
+    repository: concourse/oci-build-task
+
+jobs:
+- name: test
+  plan:
+  - in_parallel:
+    - get: branch
+      trigger: true
+    - get: examples
+  - task: unit
+    file: examples/tasks/go-test.yml
+    input_mapping:
+      repo: branch
+    params:
+      MODULE: apps/golang
+
+- name: build
+  plan:
+  - in_parallel:
+    - get: branch
+      passed: [test]
+      trigger: true
+    - get: examples
+    - get: oci-builder
+  - task: build-image
+    file: examples/tasks/build-image.yml
+    image: oci-builder
+    input_mapping:
+      repo: branch
+    privileged: true
+  - put: goapp-image
+    inputs:
+    - image
+    params:
+      image: image/image.tar
+
+- name: deploy
+  plan:
+  - get: goapp-image
+    passed: [build]
+    trigger: true
+  - in_parallel:
+    - put: k8s-deployment
+      params:
+        resource_type: deployment
+        resource_name: goapp
+        image_name: "10.96.0.100:5000/goapp"
+        image_tag: ((branch))
+        port_values:
+        - name: web
+          containerPort: "8080"
+    - put: k8s-deployment
+      params:
+        resource_type: service
+        resource_name: goapp
+        port_values:
+        - name: web
+          port: "8080"
+          targetPort: "8080"

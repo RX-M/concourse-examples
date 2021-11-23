@@ -1,0 +1,35 @@
+resource_types:
+- name: git-branches
+  type: registry-image
+  source:
+    repository: aoldershaw/git-branches-resource
+
+resources:
+- name: repo-branches
+  type: git-branches
+  icon: github
+  source:
+    uri: https://github.com/RX-M/examples
+
+- name: examples
+  type: git
+  icon: github
+  source:
+    uri: https://github.com/RX-M/examples
+
+jobs:
+- name: update-branch-pipelines
+  plan:
+  - in_parallel:
+    - get: repo-branches
+      trigger: true
+    - get: examples
+  - load_var: branches
+    file: repo-branches/branches.json
+  - across:
+    - var: branch
+      values: ((.:branches))
+    set_pipeline: dev
+    file: examples/pipelines/multi-branch/template.yml
+    instance_vars:
+      branch: ((.:branch.name))     
